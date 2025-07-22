@@ -52,9 +52,32 @@ fn DogView() -> Element {
         }
         div { id: "buttons",
             button { onclick: move |_| img_src.restart(), id: "skip", "skip" }
-            button { onclick: move |_| img_src.restart(), id: "save", "save!" }
+            button { onclick: move |_| async move {
+                    let current = img_src.cloned().unwrap();
+                    img_src.restart();
+                    _ = save_dog(current).await;
+                },
+
+                "save!"
+            }
         }
     }
 }
 
-// continue reading here -> https://dioxuslabs.com/learn/0.6/guide/backend#adding-a-backend
+#[server]
+async fn save_dog(image: String) -> Result<(), ServerFnError> {
+    use std::io::Write;
+
+    let mut file = std::fs::OpenOptions::new()
+        .write(true)
+        .append(true)
+        .create(true)
+        .open("dogs.txt")
+        .unwrap();
+
+    file.write_fmt(format_args!("{image}\n"));
+
+    Ok(())
+}
+
+// continue reading here -> https://dioxuslabs.com/learn/0.6/guide/databases
